@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/build",
+  "command": "/nix/store/r6k305g2rn0qqkvdxfvzqg7mhh7rw679-gcc-wrapper-13.2.0/bin/g++   -std=gnu++20 -o CMakeFiles/client.dir/main.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/main.cpp",
+  "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/main.cpp",
+  "output": "CMakeFiles/client.dir/main.cpp.o"
+}
+]

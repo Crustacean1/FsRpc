@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.10)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS true)
+#set(CMAKE_CXX_COMPILER /nix/store/0b2ab873jxnhi68by7dg2hs6f3i5ngx9-clang-18.1.8/bin/clang)
+project(client VERSION 1.0 LANGUAGES CXX)
+add_executable(client client/main.cpp)
+add_executable(server server/main.cpp)
