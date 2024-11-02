@@ -28,8 +28,10 @@ void echo(stream_context *context) {
   while (true) {
     std::cout << "Waiting for message" << std::endl;
     read(context, buf, 10);
-    std::cout << "Reading response" << std::endl;
-    write(context, buf, 10);
+    std::cout << "Reading response:" << std::endl;
+	std::cout<<"\t";
+    std::cout.write((char *)buf, 10);
+    std::cout << "\nMessage END" << std::endl;
   }
 }
 
@@ -95,7 +97,6 @@ int main(int argc, char **argv) {
 
   while (should_run) {
     auto event_count = epoll_wait(epollfd, events, EVENT_COUNT, -1);
-    std::cout << "Events: " << event_count << std::endl;
     for (int i = 0; i < event_count; i++) {
       std::cout << events[i].data.fd << "\t" << sock << std::endl;
       if (events[i].data.fd == sock) {
@@ -106,6 +107,7 @@ int main(int argc, char **argv) {
             receive_message(&clients.at(1), (stream_message *)buf);
           } else {
             clients.emplace(1, 1);
+
             auto client = &clients.at(1);
             init(client, sock);
             std::cout << "Peer addr: " << peer_addrlen << std::endl;

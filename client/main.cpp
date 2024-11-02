@@ -44,10 +44,14 @@ int main(int argc, char **argv) {
 
   std::thread thr([&ctx]() {
     std::cout << "Threading a needle" << std::endl;
-    char wrt_buff[10] = "jp2gmd213";
+    char wrt_buff[56] = "Jan Paweł Drugi Gwałcił Małe Dzieci o Godzinie 2137";
     std::cout << "Starting writing" << std::endl;
-    write(&ctx, wrt_buff, 10);
+    write(&ctx, wrt_buff, 56);
     std::cout << "Done writing" << std::endl;
+    char response[100];
+    read(&ctx, response, 10);
+    std::cout << "Response:" << std::endl;
+    std::cout.write(response, 56);
   });
 
   auto epollfd = epoll_create(1);
@@ -81,7 +85,7 @@ int main(int argc, char **argv) {
           receive_message(&ctx, (stream_message *)buf);
         } else {
           std::cout << "Socket disconnected" << std::endl;
-          return -1;
+          break;
         }
       } else {
         std::cout << "Utmost peculiarity" << std::endl;
@@ -89,4 +93,6 @@ int main(int argc, char **argv) {
     }
   }
   thr.join();
+  close(sfd);
+  close(epollfd);
 }

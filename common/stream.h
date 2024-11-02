@@ -1,14 +1,15 @@
 #ifndef STREAM_H
 #define STREAM_H
 
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <mutex>
 #include <signal.h>
 #include <sys/socket.h>
 
-constexpr int BUFFER_SIZE = 1000;
-constexpr int WINDOW_LENGTH = 16;
+constexpr int BUFFER_SIZE = 10;
+constexpr int WINDOW_LENGTH = 3;
 
 struct stream_message {
   int32_t seq;
@@ -29,8 +30,8 @@ public:
   int32_t next_seq = 1;
   int32_t expected_seq = 1;
   stream_message message_buffer[WINDOW_LENGTH];
-  int32_t pending_window = 0;
-  int32_t pending_offset = 0;
+  std::atomic<int32_t> pending_window = 0;
+  std::atomic<int32_t> pending_offset = 0;
 
   sockaddr peer_addr;
   socklen_t peer_addrlen = sizeof(sockaddr_storage);
@@ -48,6 +49,7 @@ public:
 
   stream_context(int i) {}
   stream_context(stream_context &&a) = delete;
+  stream_context(const stream_context &a) = delete;
 };
 
 void write(stream_context *context, void *stream, size_t length);
