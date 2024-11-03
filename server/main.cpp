@@ -26,12 +26,10 @@ void echo(stream_context *context) {
   uint8_t buf[BUF_LEN];
 
   while (true) {
-    std::cout << "Waiting for message" << std::endl;
-    read(context, buf, 10);
-    std::cout << "Reading response:" << std::endl;
-	std::cout<<"\t";
-    std::cout.write((char *)buf, 10);
-    std::cout << "\nMessage END" << std::endl;
+    read(context, buf, 5);
+    std::cout.write((char *)buf, 5);
+    std::cout << std::flush;
+    write(context, buf, 5);
   }
 }
 
@@ -55,15 +53,15 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  int sock;
+  int sfd;
   auto rp = results;
   for (; rp != nullptr; rp = rp->ai_next) {
     std::cout << "Found address!" << std::endl;
-    sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-    if (sock == -1) {
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (sfd == -1) {
       continue;
     }
-    if (bind(sock, rp->ai_addr, rp->ai_addrlen) == 0) {
+    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) {
       break;
     }
   }
@@ -74,7 +72,7 @@ int main(int argc, char **argv) {
   }
   size_t BUF_SIZE = 4096;
   char buf[BUF_SIZE];
-  sockaddr peer_addr;
+  sockaddr_in peer_addr;
   socklen_t peer_addrlen = sizeof(peer_addr);
 
   struct sigaction action;
@@ -85,8 +83,8 @@ int main(int argc, char **argv) {
   auto epollfd = epoll_create(1);
   epoll_event epoll_ev;
   epoll_ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR | EPOLLHUP;
-  epoll_ev.data.fd = sock;
-  epoll_ctl(epollfd, EPOLL_CTL_ADD, sock, &epoll_ev);
+  epoll_ev.data.fd = sfd;
+  epoll_ctl(epollfd, EPOLL_CTL_ADD, sfd, &epoll_ev);
 
   constexpr size_t EVENT_COUNT = 10;
   constexpr size_t EPOLL_INTERVAL = 1000;
@@ -98,27 +96,40 @@ int main(int argc, char **argv) {
   while (should_run) {
     auto event_count = epoll_wait(epollfd, events, EVENT_COUNT, -1);
     for (int i = 0; i < event_count; i++) {
-      std::cout << events[i].data.fd << "\t" << sock << std::endl;
-      if (events[i].data.fd == sock) {
+      if (events[i].data.fd == sfd) {
         if (events[i].events & EPOLLIN) {
-          int j = recvfrom(sock, buf, BUF_SIZE, MSG_DONTWAIT,
+          int j = recvfrom(sfd, buf, BUF_SIZE, MSG_DONTWAIT,
                            (sockaddr *)&peer_addr, &peer_addrlen);
-          if (clients.contains(1)) {
-            receive_message(&clients.at(1), (stream_message *)buf);
-          } else {
-            clients.emplace(1, 1);
+          int client_addr = peer_addr.sin_port;
+          client_addr <<= 16;
+          client_addr += peer_addr.sin_addr.s_addr;
 
-            auto client = &clients.at(1);
-            init(client, sock);
-            std::cout << "Peer addr: " << peer_addrlen << std::endl;
-            memcpy(&client->peer_addr, &peer_addr, sizeof(sockaddr));
-            client->peer_addrlen = peer_addrlen;
-            threads.emplace_back([client]() { echo(client); });
-            receive_message(client, (stream_message *)buf);
+          if (!clients.contains(client_addr)) {
+            std::cout << "Initialization" << std::endl;
+            clients.emplace(client_addr, 1);
+            init(&clients.at(client_addr), sfd);
+            memcpy(&clients.at(client_addr).peer_addr, &peer_addr,
+                   sizeof(sockaddr));
+            clients.at(client_addr).peer_addrlen = peer_addrlen;
+            stream_context *client = &clients.at(client_addr);
+            threads.emplace_back([&client]() { echo(client); });
           }
 
+          stream_context *client = &clients.at(client_addr);
+          stream_message *ptr = (stream_message *)buf;
+
+          if (ptr->seq < 0) {
+            on_ack(client, -((stream_message *)buf)->seq);
+          } else {
+            if (ptr->len <= BUFFER_SIZE) {
+              on_msg(client, ptr->seq, ptr->len, (uint8_t *)ptr->data);
+            } else {
+              std::cerr << "Invalid packet length: " << ptr->len << std::endl;
+            }
+          }
         } else {
           std::cout << "Socket disconnected" << std::endl;
+          break;
         }
       } else {
         std::cout << "Utmost peculiarity" << std::endl;
@@ -127,5 +138,5 @@ int main(int argc, char **argv) {
   }
 
   close(epollfd);
-  close(sock);
+  close(sfd);
 }

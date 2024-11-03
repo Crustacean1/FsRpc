@@ -16,6 +16,7 @@ int main(int argc, char **argv) {
   addrinfo hints;
   addrinfo *results;
 
+  srand(time(nullptr));
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_DGRAM;
@@ -41,17 +42,23 @@ int main(int argc, char **argv) {
 
   stream_context ctx(1);
   init(&ctx, sfd);
+  memcpy(&ctx.peer_addr, results->ai_addr, sizeof(sockaddr));
+  ctx.peer_addrlen = results->ai_addrlen;
 
   std::thread thr([&ctx]() {
-    std::cout << "Threading a needle" << std::endl;
-    char wrt_buff[56] = "Jan Paweł Drugi Gwałcił Małe Dzieci o Godzinie 2137";
-    std::cout << "Starting writing" << std::endl;
-    write(&ctx, wrt_buff, 56);
-    std::cout << "Done writing" << std::endl;
+    char wrt_buff[80] = "John Paul the Second Raped little children, usually "
+                        "at around 2137 O'Clock";
+    write(&ctx, wrt_buff, 80);
     char response[100];
-    read(&ctx, response, 10);
-    std::cout << "Response:" << std::endl;
-    std::cout.write(response, 56);
+  });
+
+  std::thread thr2([&ctx]() {
+    char *buff[100];
+    while (true) {
+      read(&ctx, buff, 10);
+      std::cout.write((char *)buff, 10);
+      std::cout << std::flush;
+    }
   });
 
   auto epollfd = epoll_create(1);
@@ -64,27 +71,30 @@ int main(int argc, char **argv) {
   constexpr size_t EPOLL_INTERVAL = 1000;
   epoll_event events[EVENT_COUNT];
 
-  sockaddr_storage peer_addr;
+  sockaddr peer_addr;
   socklen_t peer_addrlen = sizeof(peer_addr);
 
   size_t BUF_SIZE = 4096;
   char buf[BUF_SIZE];
 
-  std::cout << "Starting event loop" << std::endl;
   while (true) {
     auto event_count = epoll_wait(epollfd, events, EVENT_COUNT, -1);
-    std::cout << "Event transpired: " << event_count << std::endl;
     for (int i = 0; i < event_count; i++) {
       if (events[i].data.fd == sfd) {
         if (events[i].events & EPOLLIN) {
-          std::cout << "message on client" << std::endl;
           int j = recvfrom(sfd, buf, BUF_SIZE, MSG_DONTWAIT,
                            (sockaddr *)&peer_addr, &peer_addrlen);
-          memcpy(&ctx.peer_addr, &peer_addr, sizeof(sockaddr));
-          ctx.peer_addrlen = peer_addrlen;
-          receive_message(&ctx, (stream_message *)buf);
+          stream_message *ptr = (stream_message *)buf;
+          if (ptr->seq < 0) {
+            on_ack(&ctx, -((stream_message *)buf)->seq);
+          } else {
+            if (ptr->len < BUFFER_SIZE) {
+              on_msg(&ctx, ptr->seq, ptr->len, (uint8_t *)ptr->data);
+            } else {
+              std::cerr << "Invalid packet length: " << ptr->len << std::endl;
+            }
+          }
         } else {
-          std::cout << "Socket disconnected" << std::endl;
           break;
         }
       } else {
@@ -93,6 +103,7 @@ int main(int argc, char **argv) {
     }
   }
   thr.join();
+  thr2.join();
   close(sfd);
   close(epollfd);
 }
