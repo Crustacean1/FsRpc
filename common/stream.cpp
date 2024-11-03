@@ -7,6 +7,7 @@
 #include <iostream>
 #include <mutex>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 
 void schedule_clock(stream_context *context, int time);
 void send_msg(stream_context *context);
@@ -29,6 +30,7 @@ void init(stream_context *context, int sfd) {
 }
 
 void read(stream_context *context, void *stream, size_t length) {
+  syslog(LOG_INFO, "reading");
   std::promise<void> prom;
   {
     const std::lock_guard lck(context->ctx_mutex);
@@ -60,6 +62,7 @@ void read(stream_context *context, void *stream, size_t length) {
 }
 
 void write(stream_context *context, void *stream, int length) {
+  syslog(LOG_INFO, "writing");
   std::promise<void> prom;
   {
     const std::lock_guard lck(context->ctx_mutex);
@@ -67,6 +70,7 @@ void write(stream_context *context, void *stream, int length) {
     context->write_len = length;
     context->write_pos = 0;
     context->on_write = [&prom]() { prom.set_value(); };
+    syslog(LOG_INFO, "present");
     send_msg(context);
   }
   prom.get_future().get();
@@ -74,22 +78,26 @@ void write(stream_context *context, void *stream, int length) {
 }
 
 void send_msg(stream_context *context) {
+  syslog(LOG_INFO, "sending");
   stream_message msg;
   msg.seq = context->seq;
 
   msg.len = std::min(BUFFER_SIZE, context->write_len - context->write_pos);
   memcpy(msg.data, (uint8_t *)context->write_buf + context->write_pos, msg.len);
+  syslog(LOG_INFO, "Sockert : %d %lu %lu", context->sockfd,
+         *((uint64_t *)msg.data), msg.len + 2 * sizeof(int32_t));
   if (sendto(context->sockfd, (void *)&msg, msg.len + 2 * sizeof(int32_t), 0,
              &context->peer_addr, context->peer_addrlen) == -1) {
-    std::cerr << "Failed to send msg" << std::endl;
+    syslog(LOG_ERR, "Failed to send message");
   }
+  syslog(LOG_INFO, "packet sent, scheduling cock");
   schedule_clock(context, 2000);
 }
 
 void on_ack(stream_context *context, int seq) {
+  syslog(LOG_INFO, "being acknowledged");
   const std::lock_guard lck(context->ctx_mutex);
   schedule_clock(context, 0);
-  // std::cout << "Ack: " << seq << "\t" << context->seq << std::endl;
   if (seq == context->seq) {
     context->seq++;
     context->write_pos =
@@ -102,10 +110,10 @@ void on_ack(stream_context *context, int seq) {
       schedule_clock(context, 2000);
     }
   }
-  // std::cout << "On ack" << std::endl;
 }
 
 void acknowledge(stream_context *context) {
+  syslog(LOG_INFO, "ack");
   ack_message ack;
   ack.seq = -(context->remote_seq);
   if (sendto(context->sockfd, &ack, sizeof(ack), 0, &context->peer_addr,
@@ -116,6 +124,7 @@ void acknowledge(stream_context *context) {
 }
 
 void on_msg(stream_context *context, int seq, int len, uint8_t *buf) {
+  syslog(LOG_INFO, "msg");
   const std::lock_guard lck(context->ctx_mutex);
   if (context->read_buf != nullptr) {
     if (seq == context->remote_seq + 1) {
@@ -139,11 +148,12 @@ void on_msg(stream_context *context, int seq, int len, uint8_t *buf) {
 }
 
 void timer_elapsed(sigval_t si) {
+  syslog(LOG_INFO, "timeout");
   stream_context *context = (stream_context *)si.sival_ptr;
   const std::lock_guard lck(context->ctx_mutex);
   if (context->write_buf != nullptr) {
-    //std::cout << "timeout: " << context->seq << "\t" << context->remote_seq
-              //<< std::endl;
+    // std::cout << "timeout: " << context->seq << "\t" << context->remote_seq
+    //<< std::endl;
     send_msg(context);
   }
 }

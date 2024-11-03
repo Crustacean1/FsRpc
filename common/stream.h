@@ -11,6 +11,12 @@
 constexpr int BUFFER_SIZE = 10;
 constexpr int WINDOW_LENGTH = 3;
 
+struct command {
+  int function;
+  int len;
+  uint8_t *data;
+};
+
 struct stream_message {
   int32_t seq;
   int32_t len = 0;

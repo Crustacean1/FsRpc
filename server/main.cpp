@@ -1,3 +1,4 @@
+#include "../common/file_server.h"
 #include "../common/stream.h"
 #include <iostream>
 #include <netdb.h>
@@ -8,6 +9,7 @@
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/syslog.h>
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h>
@@ -33,10 +35,31 @@ void echo(stream_context *context) {
   }
 }
 
+void process(stream_context *context) {
+  int64_t len;
+  std::vector<uint8_t> buffer;
+  std::cout << "Rpc server started for: " << context->peer_addr.sa_data[0]
+            << std::endl;
+  while (true) {
+    std::cout << "Starting reading" << std::endl;
+    read(context, &len, sizeof(int64_t));
+    std::cout << "R3ad1" << std::endl;
+    read(context, buffer.data(), len);
+    std::cout << "R3ad2" << std::endl;
+    // auto response = execute((command *)buffer.data());
+    // if (response != nullptr) {
+    // write(context, &response, response->length);
+    //} else {
+    // std::cerr << "Error during rpc execution on server" << std::endl;
+    //}
+  }
+}
+
 int main(int argc, char **argv) {
   // auto udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
   addrinfo hints;
   addrinfo *results;
+  openlog("rpc-server", LOG_PID | LOG_CONS, LOG_USER);
 
   memset(&hints, 0, sizeof(hints));
   hints.ai_family = AF_INET;
@@ -98,21 +121,25 @@ int main(int argc, char **argv) {
     for (int i = 0; i < event_count; i++) {
       if (events[i].data.fd == sfd) {
         if (events[i].events & EPOLLIN) {
+          std::cout << "You got a mail!" << std::endl;
           int j = recvfrom(sfd, buf, BUF_SIZE, MSG_DONTWAIT,
                            (sockaddr *)&peer_addr, &peer_addrlen);
+
+          std::cout << *((int64_t *)buf);
+          std::cout << std::endl;
+          std::cout << "size: " << j << std::endl;
           int client_addr = peer_addr.sin_port;
           client_addr <<= 16;
           client_addr += peer_addr.sin_addr.s_addr;
 
           if (!clients.contains(client_addr)) {
-            std::cout << "Initialization" << std::endl;
             clients.emplace(client_addr, 1);
             init(&clients.at(client_addr), sfd);
             memcpy(&clients.at(client_addr).peer_addr, &peer_addr,
                    sizeof(sockaddr));
             clients.at(client_addr).peer_addrlen = peer_addrlen;
             stream_context *client = &clients.at(client_addr);
-            threads.emplace_back([&client]() { echo(client); });
+            threads.emplace_back([&client]() { process(client); });
           }
 
           stream_context *client = &clients.at(client_addr);

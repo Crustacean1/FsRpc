@@ -1,8 +1,32 @@
 [
 {
-  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/build",
-  "command": "/nix/store/r6k305g2rn0qqkvdxfvzqg7mhh7rw679-gcc-wrapper-13.2.0/bin/g++   -std=gnu++20 -o CMakeFiles/client.dir/main.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/main.cpp",
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/build",
+  "command": "/nix/store/vh9fsdhgxcnab2qk7vdp2palkkn6j3cp-gcc-wrapper-13.3.0/bin/g++  -I/nix/store/dbx2ww8bksvmjmz6c2yk84mv61m9vmmz-fuse-3.16.2/include/fuse3 -std=gnu++20 -o CMakeFiles/common.dir/common/stream.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/stream.cpp",
+  "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/stream.cpp",
+  "output": "CMakeFiles/common.dir/common/stream.cpp.o"
+},
+{
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/build",
+  "command": "/nix/store/vh9fsdhgxcnab2qk7vdp2palkkn6j3cp-gcc-wrapper-13.3.0/bin/g++  -I/nix/store/dbx2ww8bksvmjmz6c2yk84mv61m9vmmz-fuse-3.16.2/include/fuse3 -std=gnu++20 -o CMakeFiles/common.dir/common/file_server.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/file_server.cpp",
+  "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/file_server.cpp",
+  "output": "CMakeFiles/common.dir/common/file_server.cpp.o"
+},
+{
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/build",
+  "command": "/nix/store/vh9fsdhgxcnab2qk7vdp2palkkn6j3cp-gcc-wrapper-13.3.0/bin/g++  -I/nix/store/dbx2ww8bksvmjmz6c2yk84mv61m9vmmz-fuse-3.16.2/include/fuse3 -std=gnu++20 -o CMakeFiles/common.dir/common/file_client.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/file_client.cpp",
+  "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/common/file_client.cpp",
+  "output": "CMakeFiles/common.dir/common/file_client.cpp.o"
+},
+{
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/build",
+  "command": "/nix/store/vh9fsdhgxcnab2qk7vdp2palkkn6j3cp-gcc-wrapper-13.3.0/bin/g++  -I/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/./common -I/nix/store/dbx2ww8bksvmjmz6c2yk84mv61m9vmmz-fuse-3.16.2/include/fuse3 -std=gnu++20 -o CMakeFiles/client.dir/client/main.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/main.cpp",
   "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/client/main.cpp",
-  "output": "CMakeFiles/client.dir/main.cpp.o"
+  "output": "CMakeFiles/client.dir/client/main.cpp.o"
+},
+{
+  "directory": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/build",
+  "command": "/nix/store/vh9fsdhgxcnab2qk7vdp2palkkn6j3cp-gcc-wrapper-13.3.0/bin/g++  -I/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/./common -std=gnu++20 -o CMakeFiles/server.dir/server/main.cpp.o -c /home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/server/main.cpp",
+  "file": "/home/kamil/Projects/AlgorytmyRozproszone/lab-1-1/server/main.cpp",
+  "output": "CMakeFiles/server.dir/server/main.cpp.o"
 }
 ]

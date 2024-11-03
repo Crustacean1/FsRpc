@@ -19,6 +19,8 @@
           }
           {
             packages = with pkgs; [
+			  pkgs.pkg-config  # For locating FUSE libraries
+    		  pkgs.fuse3
               clang-tools
 			  clang
               cmake
