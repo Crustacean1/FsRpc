@@ -1,5 +1,6 @@
 #include "../common/file_server.h"
 #include "../common/stream.h"
+#include "server.h"
 #include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -41,17 +42,16 @@ void process(stream_context *context) {
   std::cout << "Rpc server started for: " << context->peer_addr.sa_data[0]
             << std::endl;
   while (true) {
-    std::cout << "Starting reading" << std::endl;
     read(context, &len, sizeof(int64_t));
-    std::cout << "R3ad1" << std::endl;
+    if (buffer.size() < len) {
+      buffer.resize(len);
+    }
+
+    syslog(LOG_INFO, "Reading: %lu", len);
     read(context, buffer.data(), len);
-    std::cout << "R3ad2" << std::endl;
-    // auto response = execute((command *)buffer.data());
-    // if (response != nullptr) {
-    // write(context, &response, response->length);
-    //} else {
-    // std::cerr << "Error during rpc execution on server" << std::endl;
-    //}
+    syslog(LOG_INFO, "Executing");
+    auto response = execute(buffer);
+    write(context, response.data(), response.size());
   }
 }
 
@@ -125,9 +125,6 @@ int main(int argc, char **argv) {
           int j = recvfrom(sfd, buf, BUF_SIZE, MSG_DONTWAIT,
                            (sockaddr *)&peer_addr, &peer_addrlen);
 
-          std::cout << *((int64_t *)buf);
-          std::cout << std::endl;
-          std::cout << "size: " << j << std::endl;
           int client_addr = peer_addr.sin_port;
           client_addr <<= 16;
           client_addr += peer_addr.sin_addr.s_addr;

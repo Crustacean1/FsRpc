@@ -1,6 +1,4 @@
 #include "file_client.h"
-#include "file_server.h"
-#include "fuse.h"
 #include "stream.h"
 #include <cstring>
 #include <dirent.h>
@@ -11,45 +9,37 @@
 
 stream_context *context;
 
-void client::init(stream_context *ctx) {
-  syslog(LOG_INFO, "Initializing context");
-  context = ctx;
-}
 
-int client::open(const char *path, fuse_file_info *fi) {
-  syslog(LOG_INFO, "Sending message");
-  int64_t len = 2137;
-  write(context, &len, sizeof(int64_t));
+/*int client::open(const char *path, fuse_file_info *fi) {
   syslog(LOG_INFO, "Opening some file");
-  int res;
+  int path_len = strlen(path) + 1;
+  int length = path_len + sizeof(open_in);
+  auto buffer = new uint8_t[2 * sizeof(uint64_t) + length];
+  command *ptr = (command *)buffer;
 
-  res = ::open(path, fi->flags);
-  if (res == -1)
-    return -errno;
+  uint8_t *data = (uint8_t *)(&ptr->data.open + 1);
+  memcpy(data, path, path_len);
+  ptr->data.open.path = (const char *)((uint8_t *)data - (uint8_t *)ptr);
+  data += path_len;
+  write(context, buffer, sizeof(int64_t) + length);
 
-  /* Enable direct_io when open has flags O_DIRECT to enjoy the feature
-  parallel_direct_writes (i.e., to get a shared lock, not exclusive lock,
-  for writes to the same file). */
-  if (fi->flags & O_DIRECT) {
-    fi->direct_io = 1;
-    fi->parallel_direct_writes = 1;
-  }
+  syslog(LOG_INFO, "Request sent");
 
-  fi->fh = res;
+  int64_t len;
+  read(context, &len, sizeof(int64_t));
+  auto recv_buffer = new uint8_t[len];
+  open_out *recv = (open_out *)recv_buffer;
+  read(context, recv_buffer, len);
+  syslog(LOG_INFO, "Read response");
+  memcpy(fi, &recv->fi, sizeof(fuse_file_info));
+
   return 0;
 }
 
 int client::getattr(const char *path, struct stat *stbuf, fuse_file_info *fi) {
   std::cout << "Getting dem attributes";
-
-  (void)fi;
-  int res;
-
-  res = lstat(path, stbuf);
-  if (res == -1)
-    return -errno;
-
-  return 0;
+  int path_len = strlen(path) + 1;
+  auto buffer = new uint8_t[sizeof(uint64_t) + sizeof(getattr_in) + path_len];
 }
 
 int client::readdir(const char *path, void *buf, fuse_fill_dir_t filler,
@@ -123,4 +113,4 @@ int client::write(const char *path, const char *buf, size_t size, off_t offset,
   if (fi == NULL)
     close(fd);
   return res;
-}
+}*/
