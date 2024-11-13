@@ -6,6 +6,10 @@
 #include <fcntl.h>
 #include <functional>
 
+//
+std::vector<std::vector<char>> readdir(std::vector<char> path);
+struct stat getattr(std::vector<char> path);
+//
 std::vector<uint8_t> execute(const std::vector<uint8_t> &);
 
 template <typename R, typename... Args>
@@ -14,7 +18,7 @@ serialize_function(R (*func)(Args...)) {
   return [&func](const std::vector<uint8_t> &data) {
     auto args = deserialize<Args...>(data);
     syslog(LOG_INFO, "Partial application");
-    auto result = std::apply(func, args);
+    auto result = std::apply(getattr, args);
     return serialize(result);
   };
 }
@@ -26,9 +30,6 @@ int lseek(int file, int offset, int whence);
 int chmod(std::vector<char> pathname, int mode);
 int unlink(std::vector<char> pathname);
 int rename(std::vector<char> oldpath, std::vector<char> newpath);
-//
-std::vector<std::vector<char>> readdir(std::vector<char> path);
-struct stat getattr(std::vector<char> path);
 
 const std::function<std::vector<uint8_t>(const std::vector<uint8_t> &)>
     functions[] = {

@@ -81,10 +81,11 @@ void event_loop(stream_context *ctx) {
           if (ptr->seq < 0) {
             on_ack(ctx, -((stream_message *)buf)->seq);
           } else {
-            if (ptr->len < BUFFER_SIZE) {
+            if (ptr->len <= BUFFER_SIZE) {
               on_msg(ctx, ptr->seq, ptr->len, (uint8_t *)ptr->data);
             } else {
-              syslog(LOG_ERR, "Invalid packet length: %d", ptr->len);
+              syslog(LOG_ERR, "Invalid packet length: %d %zu", ptr->len,
+                     BUF_SIZE);
             }
           }
         } else {
