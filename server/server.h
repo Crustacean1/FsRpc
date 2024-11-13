@@ -17,7 +17,6 @@ std::function<std::vector<uint8_t>(std::vector<uint8_t>)>
 serialize_function(R (*func)(Args...)) {
   return [&func](const std::vector<uint8_t> &data) {
     auto args = deserialize<Args...>(data);
-    syslog(LOG_INFO, "Partial application");
     auto result = std::apply(getattr, args);
     return serialize(result);
   };

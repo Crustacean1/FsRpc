@@ -128,11 +128,12 @@ int client::open(const char *filename, fuse_file_info *) {
 }
 
 int client::getattr(const char *filename, struct stat *st, fuse_file_info *fi) {
-  syslog(LOG_INFO, "getattr");
   std::vector<char> filename_vec(filename, filename + strlen(filename) + 1);
+  syslog(LOG_INFO, "getattr: %s", filename_vec.data());
   auto response = execute<struct stat>(
       ((client_context *)fuse_get_context()->private_data)->context, 1,
       filename_vec);
+  syslog(LOG_INFO, "getattr done");
   memcpy(st, &response, sizeof(struct stat));
   return 0;
 }

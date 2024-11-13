@@ -24,18 +24,6 @@ void handler(int sig) {
 
 std::unordered_map<uint64_t, stream_context> clients;
 
-void echo(stream_context *context) {
-  auto BUF_LEN = 512;
-  uint8_t buf[BUF_LEN];
-
-  while (true) {
-    read(context, buf, 5);
-    std::cout.write((char *)buf, 5);
-    std::cout << std::flush;
-    write(context, buf, 5);
-  }
-}
-
 void process(stream_context *context) {
   int64_t len;
   std::vector<uint8_t> buffer;

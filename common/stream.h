@@ -1,6 +1,7 @@
 #ifndef STREAM_H
 #define STREAM_H
 
+#include <ranges>
 #include <sys/syslog.h>
 #define FUSE_USE_VERSION 31
 
@@ -35,7 +36,6 @@ void write_self(const T<R> &t, uint8_t **buffer) {
 }
 
 template <typename T> void read_self(uint8_t **buffer, T &t) {
-  syslog(LOG_INFO, "Reading self type: %lu %s", *buffer, typeid(T).name());
   T *ptr = (T *)*buffer;
   *buffer = (uint8_t *)(++ptr);
   t = *ptr;
@@ -43,15 +43,13 @@ template <typename T> void read_self(uint8_t **buffer, T &t) {
 
 template <typename R, template <typename> typename T>
 void read_self(uint8_t **buffer, T<R> &container) {
-  syslog(LOG_INFO, "Reading self vector: %lu", *buffer);
   uint64_t *len = (uint64_t *)*buffer;
   uint8_t *ptr = *buffer + sizeof(uint64_t);
   for (int i = 0; i < *len; i++) {
     R r;
     read_self(&ptr, r);
-    container.push_back(std::move(r));
+    container.push_back(r);
   }
-  syslog(LOG_INFO, "Done reading");
   *buffer = ptr;
 }
 
@@ -71,7 +69,7 @@ std::tuple<Args...> deserialize(const std::vector<uint8_t> &buffer) {
   uint8_t *ptr = (uint8_t *)buffer.data();
   std::tuple<Args...> tpl;
 
-  std::apply([&ptr](auto... args) { (read_self(&ptr, args), ...); }, tpl);
+  std::apply([&ptr](auto &...args) { (read_self(&ptr, args), ...); }, tpl);
   return tpl;
 }
 
